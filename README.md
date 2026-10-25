@@ -1,3 +1,5 @@
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
+
 # YH-SLSpoofer
 
 在 **SCP: Secret Laboratory** 启动的瞬间，把它读到的 SMBIOS 机器标识换成另一组
@@ -8,7 +10,13 @@
 - 不碰注册表、磁盘序列号、网卡 MAC
 - 每次启动只需一次注入
 
-> 用于本机环境研究与自测。请在你拥有或明确获授权的机器上使用。
+<h1 align="center">🤖 本仓库由 AI 编写 · AI-WRITTEN</h1>
+
+<p align="center">
+  <b>代码、文档、逆向笔记全部由 AI（DeepSeek Harness，powered by dsh）生成并整理。</b><br>
+  <b>每条结论都在 <code>docs/REVERSE-NOTES.md</code> 里有对应的实测日志，但命令、偏移和判断请你自己复核后再用。</b><br>
+  <b>仅用于本机环境研究与自测；请在你拥有或明确获授权的机器上使用。</b>
+</p>
 
 ---
 
@@ -129,8 +137,3 @@ Remove-Item -Recurse -Force .
 | [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) | 工作原理、时序、三个设计取舍、日志格式、侦察模式 |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 完整故障排查 |
 | [docs/REVERSE-NOTES.md](docs/REVERSE-NOTES.md) | 逆向实测证据：样本结构、启动闸门、采集面、被否决的方案 |
-
----
-
-[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
-
