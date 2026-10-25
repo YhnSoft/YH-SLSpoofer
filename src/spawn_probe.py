@@ -49,8 +49,15 @@ def main():
     log = Log(LOG_FILE)
     log.section("start " + timestamp())
 
+    resolved = game_dir()
+    if not resolved:
+        log.write("[!] 自动定位游戏目录失败（Steam 注册表里没有可用的库）")
+        log.write("[!] 手动指定：setx SL_GAME_DIR \"<游戏安装目录>\"")
+        return 1
+
+    log.write("[*] 游戏目录：" + resolved)
     if not os.path.isfile(game_exe()):
-        log.write("[!] 找不到游戏可执行文件：" + game_exe())
+        log.write("[!] 该目录下没有 SCPSL.exe：" + resolved)
         return 1
 
     if game_running():

@@ -10,7 +10,7 @@ rem  executable directly and no patch is applied.
 rem
 rem  Optional environment variables:
 rem    SL_PYTHONW       full path to pythonw.exe (default: first on PATH)
-rem    SL_GAME_DIR      game install directory (default: set in sl_common.py)
+rem    SL_GAME_DIR      game install directory (default: auto-detect from Steam registry)
 rem ===========================================================================
 setlocal
 

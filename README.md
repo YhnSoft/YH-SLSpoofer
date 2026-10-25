@@ -24,10 +24,11 @@ py -m pip install frida
 
 ### 2. 配置
 
-游戏装在非默认路径时，用环境变量指过去：
+游戏目录按「`SL_GAME_DIR` 环境变量 → Steam 注册表 → 各库目录」的顺序自动定位，
+一般不用配。自动定位失败时再手动指定：
 
 ```powershell
-setx SL_GAME_DIR "D:\Games\SCP Secret Laboratory"
+setx SL_GAME_DIR "<游戏安装目录>"
 ```
 
 然后在 [src/hwid_patch.js](src/hwid_patch.js) 的 `CONFIG.identity` 里填一组自己的机器身份
@@ -85,10 +86,10 @@ YH-SLSpoofer/
 
 ## 卸载
 
-不改动系统与游戏文件，删掉仓库目录即可：
+不改动系统与游戏文件，删掉仓库目录即可（在仓库根目录执行）：
 
 ```powershell
-Remove-Item -Recurse -Force D:\YH-SLSpoofer
+Remove-Item -Recurse -Force .
 ```
 
 只有跑过 `scripts\repair-environment.ps1` 才会动系统设置（关闭测试签名、内核调试、

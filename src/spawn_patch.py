@@ -10,9 +10,9 @@ spawn_patch.py —— 带机器标识改写的启动入口
     4. frida.resume：放行，游戏开始正常启动
     5. 守候：一直等到游戏退出，期间保持钩子存活
 
-直接运行：
+直接运行（在仓库根目录）：
 
-    pythonw D:\\YH-SLSpoofer\\src\\spawn_patch.py
+    pythonw src\\spawn_patch.py
 
 日常用仓库根目录的 scripts\\start_scpsl.bat 或桌面快捷方式即可。
 """
@@ -47,9 +47,15 @@ def main():
     log = Log(LOG_FILE)
     log.section("start " + timestamp())
 
+    resolved = game_dir()
+    if not resolved:
+        log.write("[!] 自动定位游戏目录失败（Steam 注册表里没有可用的库）")
+        log.write("[!] 手动指定：setx SL_GAME_DIR \"<游戏安装目录>\"")
+        return 1
+
+    log.write("[*] 游戏目录：" + resolved)
     if not os.path.isfile(game_exe()):
-        log.write("[!] 找不到游戏可执行文件：" + game_exe())
-        log.write("[!] 用环境变量 SL_GAME_DIR 指定游戏安装目录")
+        log.write("[!] 该目录下没有 SCPSL.exe：" + resolved)
         return 1
 
     if game_running():

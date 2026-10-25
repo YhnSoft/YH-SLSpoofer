@@ -9,7 +9,7 @@
 | 双击后毫无反应 | 看 `logs/patch_runtime.log`。多半是 `pythonw` 不在 PATH，或没有 `pip install frida`。也可以直接 `python src\spawn_patch.py` 看控制台报错 |
 | `ModuleNotFoundError: No module named 'frida'` | `pip install frida`，注意装到正在使用的那个 Python（`python -c "import sys; print(sys.executable)"`） |
 | 提示「SCPSL.exe 已在运行，跳过」 | 防双开保护。关掉现有游戏再启动；两个实例抢同一 Steam 会话会让反作弊读到真值 |
-| 游戏启动后立刻自己退出 | 检查 Steam 客户端是否已登录；检查 `SL_GAME_DIR`（或 `sl_common.py` 里的默认值）是否指向正确目录 |
+| 游戏启动后立刻自己退出 | 检查 Steam 客户端是否已登录；确认游戏目录被自动定位到了正确位置（日志里有一行 `[*] 游戏目录：…`） |
 
 ## 改写没生效
 

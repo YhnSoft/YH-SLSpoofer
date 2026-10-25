@@ -4,9 +4,9 @@ sl_common.py —— 三个脚本共用的工具函数
 
 这个文件只做四件事，每件都尽量薄：
 
-1. 统一路径解析：仓库根目录、脚本目录、日志目录都从本文件位置推导，
-   这样整个仓库可以放在任何盘符下，不需要改代码里的绝对路径。
-   游戏目录默认按 Steam 库位置给一个值，可用环境变量 SL_GAME_DIR 覆盖。
+1. 统一路径解析：仓库相关的目录（脚本、日志、仓库根）都从本文件位置推导，
+   仓库放在哪个盘符、哪个目录都不用改代码。
+   游戏目录不在仓库里，按「SL_GAME_DIR → Steam 注册表 → 各库目录」自动探测。
 
 2. 统一日志写入：UTF-8、追加、失败不抛异常（日志坏了不能让游戏起不来）。
 
@@ -17,6 +17,7 @@ sl_common.py —— 三个脚本共用的工具函数
 """
 
 import os
+import re
 import subprocess
 import time
 
@@ -31,15 +32,89 @@ SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SRC_DIR)
 LOG_DIR = os.path.join(REPO_ROOT, "logs")
 
-# SCP: Secret Laboratory 的 Steam AppID。
+# SCP: Secret Laboratory 的 Steam AppID 与安装目录名
 APP_ID = "700330"
+GAME_FOLDER = "SCP Secret Laboratory"
 
-# 默认游戏安装目录；不对的话设环境变量 SL_GAME_DIR 指过去
-DEFAULT_GAME_DIR = r"D:\SteamLibrary\steamapps\common\SCP Secret Laboratory"
+
+def _steam_install_roots():
+    """
+    从注册表读出 Steam 安装目录（三个常见位置，去重保序）。
+
+    这样就不需要把任何盘符写死在代码里。非 Windows 或读不到时返回空列表。
+    """
+    try:
+        import winreg
+    except ImportError:
+        return []
+
+    candidates = [
+        (winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam", "SteamPath"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Valve\Steam", "InstallPath"),
+    ]
+
+    roots = []
+    for hive, subkey, value_name in candidates:
+        try:
+            with winreg.OpenKey(hive, subkey) as key:
+                value, _ = winreg.QueryValueEx(key, value_name)
+        except OSError:
+            continue
+        if value and value not in roots:
+            roots.append(value)
+    return roots
+
+
+def _library_roots(steam_root):
+    """
+    返回「Steam 根目录 + libraryfolders.vdf 里记录的所有库目录」。
+
+    vdf 是 Valve 的简化 keyvalue 文本，内容形如：
+
+        "libraryfolders" { "0" { "path" "D:\\SteamLibrary" } }
+
+    路径里的反斜杠是双写的。这里不引入 vdf 解析依赖，直接抽取形如
+    "X:\\..." 的字符串就够了——多抽到几个无关路径也无害，后面会逐个校验。
+    """
+    roots = [steam_root]
+    vdf_path = os.path.join(steam_root, "steamapps", "libraryfolders.vdf")
+    try:
+        with open(vdf_path, encoding="utf-8", errors="ignore") as handle:
+            text = handle.read()
+    except OSError:
+        return roots
+
+    for raw in re.findall(r'"([A-Za-z]:[\\/][^"]*)"', text):
+        path = raw.replace("\\\\", "\\")
+        if path not in roots:
+            roots.append(path)
+    return roots
+
+
+def find_game_dir():
+    """
+    定位游戏安装目录，找不到返回 None。
+
+    顺序：
+      1. 环境变量 SL_GAME_DIR（显式指定永远优先）
+      2. 各 Steam 库目录下的 steamapps\\common\\SCP Secret Laboratory
+    """
+    override = os.environ.get("SL_GAME_DIR")
+    if override:
+        return override
+
+    for steam_root in _steam_install_roots():
+        for library in _library_roots(steam_root):
+            candidate = os.path.join(library, "steamapps", "common", GAME_FOLDER)
+            if os.path.isdir(candidate):
+                return candidate
+    return None
 
 
 def game_dir():
-    return os.environ.get("SL_GAME_DIR", DEFAULT_GAME_DIR)
+    """游戏目录；解析不到时返回空串，由调用方给出可读提示。"""
+    return find_game_dir() or ""
 
 
 def game_exe():
