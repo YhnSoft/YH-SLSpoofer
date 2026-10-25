@@ -101,8 +101,8 @@ SMBIOS 不是定长结构体数组，而是一条变长记录流：
 - 只有 `[READY]` 没有 `[PATCH]` → 钩子装上了但没命中，见
   [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - `[FIELD]` 每行就是一个被替换的字段，`"改前" -> "改后"`
-- 机器标识默认只保留首尾各几位（`CONFIG.mask`）。要完整值排错，把 `mask.enabled`
-  临时设成 `false`
+- 机器标识默认只保留首尾各几位（`config.json` 里 `js."hwid_patch.js".mask`）。
+  要完整值排错，把 `enabled` 临时设成 `false`
 
 日志是 UTF-8。Windows PowerShell 5.1 默认按 GBK 显示会乱码，用
 `Get-Content -Encoding UTF8` 或直接用编辑器打开。
@@ -110,6 +110,13 @@ SMBIOS 不是定长结构体数组，而是一条变长记录流：
 ## 5. 侦察模式
 
 需要重新确认反作弊读了什么（换了版本、换了机器、怀疑采集面变宽）时：
+
+```powershell
+pythonw src\spawn_probe.py
+```
+
+观察窗口在 `config.json` 的 `probe_seconds` 里配（默认 300 秒）。临时改一次，
+也可以用环境变量覆盖（优先级高于配置文件）：
 
 ```powershell
 set SL_PROBE_SECONDS=600
@@ -136,8 +143,8 @@ pythonw src\spawn_probe.py
 
 所有标签都带 `<- 模块名+偏移`，那是调用者。只关心带目标模块名的行。
 
-侦察器默认**不打印** SMBIOS 表内容（`CONFIG.dumpTable = false`），因为那张表里就是
-完整机器码。需要时临时打开。
+侦察器默认**不打印** SMBIOS 表内容（`config.json` 里 `js."hwid_probe.js".dumpTable`），
+因为那张表里就是完整机器码。需要时临时打开。
 
 ## 6. 被读写的系统接口
 

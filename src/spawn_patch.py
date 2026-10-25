@@ -23,6 +23,7 @@ import threading
 import frida
 
 from sl_common import (
+    CONFIG_PATH,
     game_dir,
     game_exe,
     game_running,
@@ -47,10 +48,14 @@ def main():
     log = Log(LOG_FILE)
     log.section("start " + timestamp())
 
+    log.write(
+        "[*] 配置：" + ("config.json" if os.path.isfile(CONFIG_PATH) else "未找到 config.json，使用内置默认")
+    )
+
     resolved = game_dir()
     if not resolved:
-        log.write("[!] 自动定位游戏目录失败（Steam 注册表里没有可用的库）")
-        log.write("[!] 手动指定：setx SL_GAME_DIR \"<游戏安装目录>\"")
+        log.write("[!] 没有可用的游戏目录：config.json 的 game_dir 为空，Steam 自动探测也失败")
+        log.write("[!] 处理：复制 config.example.json 为 config.json，填写 game_dir")
         return 1
 
     log.write("[*] 游戏目录：" + resolved)

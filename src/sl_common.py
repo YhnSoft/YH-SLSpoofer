@@ -6,7 +6,8 @@ sl_common.py —— 三个脚本共用的工具函数
 
 1. 统一路径解析：仓库相关的目录（脚本、日志、仓库根）都从本文件位置推导，
    仓库放在哪个盘符、哪个目录都不用改代码。
-   游戏目录不在仓库里，按「SL_GAME_DIR → Steam 注册表 → 各库目录」自动探测。
+   游戏目录优先取 config.json 的 game_dir；留空则按「SL_GAME_DIR → Steam
+   注册表 → 各库目录」自动探测。
 
 2. 统一日志写入：UTF-8、追加、失败不抛异常（日志坏了不能让游戏起不来）。
 
@@ -16,6 +17,7 @@ sl_common.py —— 三个脚本共用的工具函数
    这段重复流程收拢到一处，两个入口脚本只写各自关心的逻辑。
 """
 
+import json
 import os
 import re
 import subprocess
@@ -32,9 +34,32 @@ SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SRC_DIR)
 LOG_DIR = os.path.join(REPO_ROOT, "logs")
 
+# 本地配置文件（不进版本库）与模板
+CONFIG_PATH = os.path.join(REPO_ROOT, "config.json")
+CONFIG_EXAMPLE_PATH = os.path.join(REPO_ROOT, "config.example.json")
+
 # SCP: Secret Laboratory 的 Steam AppID 与安装目录名
 APP_ID = "700330"
 GAME_FOLDER = "SCP Secret Laboratory"
+
+
+def load_config():
+    """
+    读取仓库根目录的 config.json。
+
+    设计约束：
+      - 配置坏了不能把启动弄挂，所以任何解析错误都退回空配置；
+      - 不缓存，启动流程只会调用几次，读文件比维护缓存更省心。
+    """
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as handle:
+            data = json.load(handle)
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError):
+        return {}
+
+    return data if isinstance(data, dict) else {}
 
 
 def _steam_install_roots():
@@ -113,12 +138,60 @@ def find_game_dir():
 
 
 def game_dir():
-    """游戏目录；解析不到时返回空串，由调用方给出可读提示。"""
+    """
+    游戏目录，解析顺序（前面的优先）：
+
+      1. 环境变量 SL_GAME_DIR —— 临时覆盖，不改文件
+      2. config.json 里的 game_dir —— 常规配置入口
+      3. Steam 注册表 + 各库目录自动探测 —— 不想配也能跑
+
+    返回空串表示三种方式都没找到，由调用方给出可读提示。
+    """
+    override = os.environ.get("SL_GAME_DIR")
+    if override:
+        return override
+
+    configured = load_config().get("game_dir")
+    if isinstance(configured, str) and configured.strip():
+        # 允许写 %USERPROFILE% 之类的环境变量，便于在不同机器间复用配置
+        return os.path.expandvars(os.path.expanduser(configured.strip()))
+
     return find_game_dir() or ""
 
 
 def game_exe():
     return os.path.join(game_dir(), "SCPSL.exe")
+
+
+def probe_seconds(default=300.0):
+    """
+    侦察模式的观察窗口秒数。
+
+    优先级：SL_PROBE_SECONDS 环境变量 → config.json 的 probe_seconds → 内置默认。
+    """
+    raw = os.environ.get("SL_PROBE_SECONDS")
+    if raw is None:
+        raw = load_config().get("probe_seconds", default)
+
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def script_config(js_filename):
+    """
+    取出 config.json 里 js.<文件名> 这一段的覆盖配置。
+
+    这段 JSON 会被原样注入到 JS 脚本最前面（见 load_script），
+    JS 侧用同样的键名做默认值合并，所以两边键名必须一致（camelCase）。
+    """
+    js_section = load_config().get("js")
+    if not isinstance(js_section, dict):
+        return {}
+
+    override = js_section.get(js_filename)
+    return override if isinstance(override, dict) else {}
 
 
 def script_path(filename):
@@ -223,6 +296,12 @@ def load_script(session, js_filename, on_message):
     path = script_path(js_filename)
     with open(path, encoding="utf-8") as handle:
         source = handle.read()
+
+    # 把集中配置注入成脚本最前面的一个全局变量。
+    # 这样 JS 里不需要读文件，也不依赖 Frida 的文件 API；
+    # JS 侧再用同样的默认值做合并兜底（直接用 frida CLI 加载时也能跑）。
+    injected = json.dumps(script_config(js_filename), ensure_ascii=False)
+    source = "globalThis.__SLSPOOFER_CONFIG__ = %s;\n%s" % (injected, source)
 
     script = session.create_script(source)
     script.on("message", on_message)

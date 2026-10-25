@@ -34,12 +34,23 @@
  * Frida 17.x，Windows x64。
  */
 
-const CONFIG = {
+/**
+ * 内置默认值。
+ *
+ * 真正生效的配置在仓库根目录的 config.json 里：Python 侧读取后，以
+ * globalThis.__SLSPOOFER_CONFIG__ 的形式注入到本脚本最前面。这里保留
+ * 一份同样的默认值，作用有两个：
+ *   1. 没有 config.json 时也能直接跑；
+ *   2. 用 frida CLI 手动加载本文件时同样可用。
+ *
+ * 两边键名必须一致（camelCase）。
+ */
+const DEFAULTS = {
   /**
-   * 只处理由这个模块发起的调用。设为 null 则处理所有调用者（不推荐）。
-   * 匹配的是调用指令所在模块的文件名。
+   * 只处理由这个模块发起的调用。字符串会转成正则；
+   * 设为 null 则处理所有调用者（不推荐）。
    */
-  onlyFromModule: /SL-AC\.dll/i,
+  onlyFromModule: 'SL-AC\\.dll',
 
   /** 日志条数上限，避免长时间运行把日志刷爆。 */
   logBudget: 80,
@@ -48,10 +59,10 @@ const CONFIG = {
    * 日志脱敏。
    *
    * 日志里同时出现「原始机器码」和「伪造机器码」，一旦被截图或上传，
-   * 等于把自己的真实机器指纹公开。默认只保留首尾几位，中间用 * 覆盖，
+   * 等于把真实机器指纹公开。默认只保留首尾几位，中间用 * 覆盖，
    * 这样依然能一眼比对"改前 / 改后是不是不一样"，但看不出完整值。
    *
-   * 需要完整值排错时，把 enabled 改成 false（不建议长期保持）。
+   * 需要完整值排错时，在 config.json 里把 enabled 改成 false。
    */
   mask: {
     enabled: true,
@@ -66,8 +77,6 @@ const CONFIG = {
    * 只要最终写回的长度与原字符串一致，表结构就是合法的。
    */
   identity: {
-    // 下面是占位示例值，第一次使用前请换成你自己的。
-    // 长度随意：写入时会按目标字符串的实际长度截断或空格补齐。
     systemSerial: 'EXAMPLE000000001',
     boardSerial: 'EXAMPLE0001',
     chassisSerial: 'EXAMPLE000000001',
@@ -77,6 +86,43 @@ const CONFIG = {
     ],
   },
 };
+
+/**
+ * 深合并：以 defaults 的键集合为准，override 覆盖标量与数组，
+ * 对象递归合并；override 里多出来的键也保留，方便将来扩展。
+ */
+function mergeDefaults(defaults, override) {
+  const source = override && typeof override === 'object' ? override : {};
+  const result = {};
+
+  for (const key of Object.keys(defaults)) {
+    const defaultValue = defaults[key];
+    const overrideValue = source[key];
+
+    if (
+      defaultValue &&
+      typeof defaultValue === 'object' &&
+      !Array.isArray(defaultValue)
+    ) {
+      result[key] = mergeDefaults(defaultValue, overrideValue);
+    } else {
+      result[key] = overrideValue === undefined ? defaultValue : overrideValue;
+    }
+  }
+
+  for (const key of Object.keys(source)) {
+    if (!(key in result)) result[key] = source[key];
+  }
+
+  return result;
+}
+
+const CONFIG = mergeDefaults(DEFAULTS, globalThis.__SLSPOOFER_CONFIG__ || {});
+
+// JSON 里写不了正则字面量，所以配置里用字符串表示，这里转回正则
+if (typeof CONFIG.onlyFromModule === 'string') {
+  CONFIG.onlyFromModule = new RegExp(CONFIG.onlyFromModule, 'i');
+}
 
 const START = Date.now();
 

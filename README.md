@@ -24,26 +24,49 @@ py -m pip install frida
 
 ### 2. 配置
 
-游戏目录按「`SL_GAME_DIR` 环境变量 → Steam 注册表 → 各库目录」的顺序自动定位，
-一般不用配。自动定位失败时再手动指定：
+所有可调项集中在一个文件里：
 
 ```powershell
-setx SL_GAME_DIR "<游戏安装目录>"
+Copy-Item config.example.json config.json
 ```
 
-然后在 [src/hwid_patch.js](src/hwid_patch.js) 的 `CONFIG.identity` 里填一组自己的机器身份
-（仓库里是占位示例）：
+`config.json`（不进版本库，随便写本机路径）：
 
-```javascript
-identity: {
-  systemSerial: 'EXAMPLE000000001',  // 系统序列号（Type 1）
-  boardSerial: 'EXAMPLE0001',        // 主板序列号（Type 2）
-  chassisSerial: 'EXAMPLE000000001', // 机箱序列号（Type 3）
-  systemUuid: [...16 个字节...],      // 系统 UUID
-},
+```jsonc
+{
+  "game_dir": "",              // 留空则自动探测 Steam 库；也可写绝对路径
+  "probe_seconds": 300,        // 侦察模式观察窗口
+
+  "js": {
+    "hwid_patch.js": {
+      "onlyFromModule": "SL-AC\\.dll",   // 只处理这个模块发起的调用
+      "logBudget": 80,
+      "mask": { "enabled": true, "keepStart": 3, "keepEnd": 2 },
+      "identity": {
+        "systemSerial":  "EXAMPLE000000001",   // Type 1 系统序列号
+        "boardSerial":   "EXAMPLE0001",        // Type 2 主板序列号
+        "chassisSerial": "EXAMPLE000000001",   // Type 3 机箱序列号
+        "systemUuid": [0, 17, 34, 51, 68, 85, 102, 119,
+                       136, 153, 170, 187, 204, 221, 238, 255]
+      }
+    },
+    "hwid_probe.js": {
+      "targetModule": "SL-AC\\.dll",
+      "logBudget": 1200,
+      "dumpTable": false,      // 是否把 SMBIOS 表内容打进日志
+      "maskSecrets": true
+    }
+  }
+}
 ```
 
-长度不必和真值一致，代码会按目标字符串长度自动截断或补齐。
+要点：
+
+- **只改 `config.json` 即可**，不用碰任何 `.js` / `.py`。
+- `game_dir` 留空时，顺序是「`SL_GAME_DIR` 环境变量 → Steam 注册表 → 各库目录」。
+- `identity` 三个串长度不必和真值一致，写入时按目标字符串长度截断或补齐。
+- `config.json` 已在 `.gitignore` 里；**不要把真实机器码提交进仓库**。
+- 改完不需要重新安装，下次启动生效。
 
 ### 3. 启动
 
@@ -60,10 +83,11 @@ identity: {
 
 ```
 YH-SLSpoofer/
-├── docs/            原理、排错、逆向实测记录
-├── scripts/         启动脚本与环境修复脚本
-├── src/             改写器、侦察器、Python 编排
-└── logs/            运行日志（自动创建，不进版本库）
+├── config.example.json   配置模板（复制成 config.json 后修改）
+├── docs/                 原理、排错、逆向实测记录
+├── scripts/              启动脚本与环境修复脚本
+├── src/                  改写器、侦察器、Python 编排
+└── logs/                 运行日志（自动创建，不进版本库）
 ```
 
 ## 常见问题

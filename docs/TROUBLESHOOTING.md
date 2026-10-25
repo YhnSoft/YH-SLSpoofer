@@ -31,8 +31,17 @@
 | 现象 | 原因 / 处理 |
 | --- | --- |
 | 用 `Get-Content` 看日志是乱码 | 日志是 UTF-8，Windows PowerShell 5.1 默认按 GBK 显示。用 `Get-Content -Encoding UTF8`，或直接用编辑器打开 |
-| 日志里机器码是 `ABC****89` 这种 | 正常。默认脱敏只保留首尾几位，要完整值把 `hwid_patch.js` 的 `CONFIG.mask.enabled` 临时设为 `false` |
+| 日志里机器码是 `ABC****89` 这种 | 正常。默认脱敏只保留首尾几位，要完整值把 `config.json` 里 `js."hwid_patch.js".mask.enabled` 临时设为 `false` |
 | `logs/` 目录不存在 | 第一次成功启动后才会创建 |
+| 改了 `config.json` 但没生效 | 检查 JSON 语法（多一个逗号就会解析失败，此时静默退回内置默认）。日志第一行会写用的是 `config.json` 还是内置默认 |
+
+## 配置
+
+| 现象 | 原因 / 处理 |
+| --- | --- |
+| 日志写「未找到 config.json，使用内置默认」 | 还没复制模板：`Copy-Item config.example.json config.json` |
+| `game_dir` 填了但提示目录不存在 | 路径要写完整目录（含 `SCP Secret Laboratory`），不要指向 Steam 根目录；支持 `%USERPROFILE%` 之类的环境变量 |
+| 身份改完却发现机器码没变 | 确认改的是 `js."hwid_patch.js".identity`，且改的是 `config.json` 不是 `config.example.json` |
 
 ## 网络
 
@@ -50,8 +59,7 @@
 python -c "import sys, frida; print(sys.executable, frida.__version__)"
 
 # 2. 用侦察模式跑一次，看反作弊实际的调用者与采集面
-set SL_PROBE_SECONDS=120
-python src\spawn_probe.py
+python src\spawn_probe.py          # 观察窗口在 config.json 的 probe_seconds
 
 # 3. 看日志
 Get-Content logs\probe_runtime.log -Encoding UTF8 -Tail 80

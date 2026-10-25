@@ -29,9 +29,13 @@
  * 由 spawn_probe.py 在进程挂起时载入，或在游戏运行时 attach 后载入。
  */
 
-const CONFIG = {
-  /** 目标模块：只有它发起的调用才值得关注。 */
-  targetModule: /SL-AC\.dll/i,
+/**
+ * 内置默认值。实际配置来自仓库根目录的 config.json 的 js."hwid_probe.js" 段，
+ * 由 Python 侧注入成 globalThis.__SLSPOOFER_CONFIG__；这里做合并与兜底。
+ */
+const DEFAULTS = {
+  /** 目标模块：只有它发起的调用才值得关注。字符串会转成正则。 */
+  targetModule: 'SL-AC\\.dll',
 
   /** 日志上限，防止长时间运行刷爆管道。 */
   logBudget: 1200,
@@ -47,6 +51,40 @@ const CONFIG = {
   /** 是否对注册表里读到的长文本值（MachineGuid 等）做打码。 */
   maskSecrets: true,
 };
+
+/** 深合并，规则与 hwid_patch.js 保持一致。 */
+function mergeDefaults(defaults, override) {
+  const source = override && typeof override === 'object' ? override : {};
+  const result = {};
+
+  for (const key of Object.keys(defaults)) {
+    const defaultValue = defaults[key];
+    const overrideValue = source[key];
+
+    if (
+      defaultValue &&
+      typeof defaultValue === 'object' &&
+      !Array.isArray(defaultValue)
+    ) {
+      result[key] = mergeDefaults(defaultValue, overrideValue);
+    } else {
+      result[key] = overrideValue === undefined ? defaultValue : overrideValue;
+    }
+  }
+
+  for (const key of Object.keys(source)) {
+    if (!(key in result)) result[key] = source[key];
+  }
+
+  return result;
+}
+
+const CONFIG = mergeDefaults(DEFAULTS, globalThis.__SLSPOOFER_CONFIG__ || {});
+
+// JSON 里写不了正则字面量，配置里用字符串表示，这里转回正则
+if (typeof CONFIG.targetModule === 'string') {
+  CONFIG.targetModule = new RegExp(CONFIG.targetModule, 'i');
+}
 
 const START = Date.now();
 let logRemaining = CONFIG.logBudget;
