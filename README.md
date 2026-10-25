@@ -91,8 +91,7 @@ YH-SLSpoofer/
 │   ├── sl_common.py            公共工具：路径、配置、日志、会话装配
 │   ├── spawn_patch.py          正常启动入口
 │   ├── spawn_probe.py          侦察启动入口
-│   ├── start_scpsl.bat         双击入口
-│   └── repair-environment.ps1  环境修复（测试签名 / Defender）
+│   └── start_scpsl.bat         双击入口
 ├── docs/                       原理、排错、逆向实测记录
 └── logs/                       运行日志（自动创建，不进版本库）
 ```
@@ -103,7 +102,7 @@ YH-SLSpoofer/
 | --- | --- |
 | 双击没反应 | 看 `logs/patch_runtime.log`，通常是没有 `pip install frida` |
 | 日志只有 `[READY]` 没有 `[PATCH]` | 不是从本入口启动，或反作弊模块名变了 |
-| 弹框要求关闭测试签名 | 管理员运行 `src\repair-environment.ps1` 后重启 |
+| 弹框要求关闭测试签名 / 内核调试 | 这是机器环境问题，与本项目无关。按弹框提示自行关闭对应开关后重启即可 |
 
 完整列表见 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
 
@@ -114,6 +113,14 @@ YH-SLSpoofer/
 - **依赖注入**，若目标将来加入注入检测，需要调整注入方式。
 - **采集面可能变化**，反作弊更新后用侦察模式重新确认。
 - 账号层面的封禁与本项目无关。
+
+## 卸载
+
+不改动系统与游戏文件，删掉仓库目录即可（在仓库根目录执行）：
+
+```powershell
+Remove-Item -Recurse -Force .
+```
 
 ## 文档
 

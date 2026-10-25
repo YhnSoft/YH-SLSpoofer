@@ -101,7 +101,8 @@ NORMALIZ   IdnToUnicode
 [NTREG] SystemStartOptions = TESTSIGNING NOEXECUTE=OPTIN ...
 ```
 
-修复脚本见 `src/repair-environment.ps1`，改完必须重启。
+处理方式：按提示把测试签名 / 内核调试关掉、清空 Defender 排除项，然后重启。
+本项目不附带这类环境修复脚本——具体怎么关取决于这台机器被什么改动过。
 
 ### 4.2 游戏目录文件白名单
 

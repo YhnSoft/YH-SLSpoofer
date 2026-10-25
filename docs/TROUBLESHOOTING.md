@@ -21,9 +21,12 @@
 
 ## 反作弊弹框
 
+这一节只在真的弹出下面这些框时才相关。本项目不附带环境修复脚本——
+这些开关怎么关取决于你的机器被什么改过。
+
 | 弹框原文 | 含义 | 处理 |
 | --- | --- | --- |
-| *Please disable kernel debugging, exclusion paths and test signing in your system before playing* | 机器环境不合规：开了测试签名 / 内核调试，或 Defender 排除项非空、服务查不到 | 管理员运行 `src\repair-environment.ps1`，然后**必须重启**（测试签名是引导期设置） |
+| *Please disable kernel debugging, exclusion paths and test signing in your system before playing* | 机器环境被改动过：开了测试签名 / 内核调试，或 Defender 排除项非空、服务查不到。常见来源是驱动开发、内核调试、其它游戏的反作弊 | 按提示关闭对应开关后**重启**（测试签名、内核调试都是引导期设置）。关完记得按需改回，否则依赖它们的其它工具会失效 |
 | *Unexpected game file found (…)* | 游戏目录里有 Steam 清单外的文件 | 把多余文件移出游戏目录（额外的 exe、DLL、IDA 数据库 `.id0/.id1/.i64` 等） |
 
 ## 日志本身
