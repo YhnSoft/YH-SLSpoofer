@@ -375,6 +375,25 @@ function toHex(bytes, offset, length) {
 }
 
 /**
+ * 校验配置里的 systemUuid。
+ *
+ * 要求是「恰好 16 个 0–255 的整数」——JSON 里很容易写成 15 个、带引号的
+ * "0x4a"、或者浮点数。这里统一挡掉，返回规整后的字节数组；
+ * 不合法返回 null，由调用方跳过 UUID 改写并写一条 WARN。
+ */
+function normalizeUuid(value) {
+  if (!Array.isArray(value) || value.length !== 16) return null;
+
+  const bytes = [];
+  for (const item of value) {
+    const n = Number(item);
+    if (!Number.isInteger(n) || n < 0 || n > 255) return null;
+    bytes.push(n);
+  }
+  return bytes;
+}
+
+/**
  * 对整张表执行改写。返回给日志用的说明文字数组。
  * 传入的 bytes 会被原地修改。
  */
@@ -424,11 +443,20 @@ function applyIdentity(bytes) {
   // ---- 2) 系统 UUID：Type 1 格式化区偏移 0x08，16 字节二进制 ----
   const system = byType[1];
   if (system && system.formattedLength >= 24) {
-    const uuidOffset = system.offset + 8;
-    const before = toHex(bytes, uuidOffset, 16);
-    const uuid = CONFIG.identity.systemUuid;
-    for (let i = 0; i < 16; i++) bytes[uuidOffset + i] = uuid[i] & 0xff;
-    report.push('T1 System UUID: ' + maskHex(before) + ' -> ' + maskHex(toHex(bytes, uuidOffset, 16)));
+    const uuid = normalizeUuid(CONFIG.identity.systemUuid);
+
+    if (!uuid) {
+      // 配置写错时不要硬写（越界元素会变成 0，反而制造出一台奇怪的机器），
+      // 直接跳过 UUID，其它字段照常改写。
+      emit('WARN', 'systemUuid 必须是 16 个 0-255 的整数，已跳过 UUID 改写');
+    } else {
+      const uuidOffset = system.offset + 8;
+      const before = toHex(bytes, uuidOffset, 16);
+      for (let i = 0; i < 16; i++) bytes[uuidOffset + i] = uuid[i];
+      report.push(
+        'T1 System UUID: ' + maskHex(before) + ' -> ' + maskHex(toHex(bytes, uuidOffset, 16))
+      );
+    }
   }
 
   return report;

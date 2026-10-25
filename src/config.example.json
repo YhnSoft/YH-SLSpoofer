@@ -20,6 +20,7 @@
         "systemSerial": "EXAMPLE000000001",
         "boardSerial": "EXAMPLE0001",
         "chassisSerial": "EXAMPLE000000001",
+        "_systemUuid_note": "16 个 0-255 的十进制整数，按内存字节顺序排列；生成方法见 README 的 systemUuid 一节",
         "systemUuid": [
           0, 17, 34, 51, 68, 85, 102, 119,
           136, 153, 170, 187, 204, 221, 238, 255

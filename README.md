@@ -86,6 +86,52 @@ Copy-Item src\config.example.json src\config.json
 - `src\config.json` 已在 `.gitignore` 里；**不要把真实机器码提交进仓库**。
 - 改完不需要重新安装，下次启动生效。
 
+#### 每个参数怎么填
+
+| 参数 | 类型 | 示例 | 说明 |
+| --- | --- | --- | --- |
+| `game_dir` | 字符串 | `"D:\\SteamLibrary\\steamapps\\common\\SCP Secret Laboratory"` | 留空则自动探测。支持 `%USERPROFILE%` 之类环境变量 |
+| `probe_seconds` | 数字 | `300` | 侦察模式观察窗口，单位秒 |
+| `js."hwid_patch.js".onlyFromModule` | 正则字符串 | `"SL-AC\\.dll"` | 只处理该模块发起的调用。JSON 里反斜杠要双写 |
+| `js."hwid_patch.js".logBudget` | 数字 | `80` | 改写器日志条数上限，防止刷屏 |
+| `js."hwid_patch.js".mask.enabled` | 布尔 | `true` | 日志里的机器码是否打码 |
+| `js."hwid_patch.js".mask.keepStart` | 数字 | `3` | 打码时保留开头几位 |
+| `js."hwid_patch.js".mask.keepEnd` | 数字 | `2` | 打码时保留结尾几位 |
+| `js."hwid_patch.js".identity.systemSerial` | 字符串 | `"EXAMPLE000000001"` | Type 1 系统序列号 |
+| `js."hwid_patch.js".identity.boardSerial` | 字符串 | `"EXAMPLE0001"` | Type 2 主板序列号 |
+| `js."hwid_patch.js".identity.chassisSerial` | 字符串 | `"EXAMPLE000000001"` | Type 3 机箱序列号 |
+| `js."hwid_patch.js".identity.systemUuid` | 16 个整数 | `[74, 44, 174, 228, 230, 35, 243, 75, 190, 122, 18, 190, 14, 162, 72, 156]` | Type 1 系统 UUID，见下 |
+| `js."hwid_probe.js".targetModule` | 正则字符串 | `"SL-AC\\.dll"` | 侦察器只关注该模块的调用 |
+| `js."hwid_probe.js".logBudget` | 数字 | `1200` | 侦察日志条数上限 |
+| `js."hwid_probe.js".dumpTable` | 布尔 | `false` | 是否把 SMBIOS 表内容打进日志（含完整机器码，默认关） |
+| `js."hwid_probe.js".maskSecrets` | 布尔 | `true` | 是否给读到的长文本（`MachineGuid` 等）打码 |
+
+三个串号的长度不必和真值一致：短了补空格、长了截断，SMBIOS 表结构不受影响。
+`onlyFromModule` / `targetModule` 是**正则字符串**而不是通配符，`\\.` 表示字面量点号。
+
+#### `systemUuid` 怎么填
+
+唯一不是字符串的字段，要求 **恰好 16 个 0–255 的整数**，顺序是内存字节序。
+生成一组新的：
+
+```powershell
+[guid]::NewGuid().ToByteArray() -join ', '
+```
+
+输出形如 `74, 44, 174, 228, 230, 35, 243, 75, 190, 122, 18, 190, 14, 162, 72, 156`，
+整行粘进数组即可。`.NET` 的 `Guid.ToByteArray()` 前 3 段本身就是小端存放，
+和 SMBIOS 的约定一致，不用手动翻字节。
+
+想基于本机真实 UUID 改（先看值，再转数组）：
+
+```powershell
+(Get-CimInstance Win32_ComputerSystemProduct).UUID
+[byte[]]([guid](Get-CimInstance Win32_ComputerSystemProduct).UUID).ToByteArray() -join ', '
+```
+
+填错不会崩：数量不是 16、元素不是整数或越界时，改写器会跳过 UUID 并写一条
+`[WARN] systemUuid 必须是 16 个 0-255 的整数`，其余字段照常改写。
+
 ### 3. 启动
 
 双击 `src\start_scpsl.bat`，或给它建一个快捷方式。
