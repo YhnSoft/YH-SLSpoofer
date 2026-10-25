@@ -115,17 +115,6 @@ YH-SLSpoofer/
 - **采集面可能变化**，反作弊更新后用侦察模式重新确认。
 - 账号层面的封禁与本项目无关。
 
-## 卸载
-
-不改动系统与游戏文件，删掉仓库目录即可（在仓库根目录执行）：
-
-```powershell
-Remove-Item -Recurse -Force .
-```
-
-只有跑过 `src\repair-environment.ps1` 才会动系统设置（关闭测试签名、内核调试、
-清 Defender 排除项），需要时自行用 `bcdedit` 恢复。
-
 ## 文档
 
 | 文档 | 内容 |
@@ -133,3 +122,8 @@ Remove-Item -Recurse -Force .
 | [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) | 工作原理、时序、三个设计取舍、日志格式、侦察模式 |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 完整故障排查 |
 | [docs/REVERSE-NOTES.md](docs/REVERSE-NOTES.md) | 逆向实测证据：样本结构、启动闸门、采集面、被否决的方案 |
+
+---
+
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
+
