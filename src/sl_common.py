@@ -29,14 +29,16 @@ import frida
 # 路径
 # ---------------------------------------------------------------------------
 
-# 本文件位于 <repo>/src/，所以上两级就是仓库根目录
+# 本文件位于 <repo>/src/，所以上一级是仓库根目录
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SRC_DIR)
+
+# 运行日志统一放在仓库根的 logs/ 下（体积大，和代码分开）
 LOG_DIR = os.path.join(REPO_ROOT, "logs")
 
-# 本地配置文件（不进版本库）与模板
-CONFIG_PATH = os.path.join(REPO_ROOT, "config.json")
-CONFIG_EXAMPLE_PATH = os.path.join(REPO_ROOT, "config.example.json")
+# 配置与代码同目录，便于整包拷贝：src/ 就是"运行所需的一切"
+CONFIG_PATH = os.path.join(SRC_DIR, "config.json")
+CONFIG_EXAMPLE_PATH = os.path.join(SRC_DIR, "config.example.json")
 
 # SCP: Secret Laboratory 的 Steam AppID 与安装目录名
 APP_ID = "700330"

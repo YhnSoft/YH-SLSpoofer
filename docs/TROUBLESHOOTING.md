@@ -23,7 +23,7 @@
 
 | 弹框原文 | 含义 | 处理 |
 | --- | --- | --- |
-| *Please disable kernel debugging, exclusion paths and test signing in your system before playing* | 机器环境不合规：开了测试签名 / 内核调试，或 Defender 排除项非空、服务查不到 | 管理员运行 `scripts\repair-environment.ps1`，然后**必须重启**（测试签名是引导期设置） |
+| *Please disable kernel debugging, exclusion paths and test signing in your system before playing* | 机器环境不合规：开了测试签名 / 内核调试，或 Defender 排除项非空、服务查不到 | 管理员运行 `src\repair-environment.ps1`，然后**必须重启**（测试签名是引导期设置） |
 | *Unexpected game file found (…)* | 游戏目录里有 Steam 清单外的文件 | 把多余文件移出游戏目录（额外的 exe、DLL、IDA 数据库 `.id0/.id1/.i64` 等） |
 
 ## 日志本身
@@ -31,7 +31,7 @@
 | 现象 | 原因 / 处理 |
 | --- | --- |
 | 用 `Get-Content` 看日志是乱码 | 日志是 UTF-8，Windows PowerShell 5.1 默认按 GBK 显示。用 `Get-Content -Encoding UTF8`，或直接用编辑器打开 |
-| 日志里机器码是 `ABC****89` 这种 | 正常。默认脱敏只保留首尾几位，要完整值把 `config.json` 里 `js."hwid_patch.js".mask.enabled` 临时设为 `false` |
+| 日志里机器码是 `ABC****89` 这种 | 正常。默认脱敏只保留首尾几位，要完整值把 `src\config.json` 里 `js."hwid_patch.js".mask.enabled` 临时设为 `false` |
 | `logs/` 目录不存在 | 第一次成功启动后才会创建 |
 | 改了 `config.json` 但没生效 | 检查 JSON 语法（多一个逗号就会解析失败，此时静默退回内置默认）。日志第一行会写用的是 `config.json` 还是内置默认 |
 
@@ -39,9 +39,9 @@
 
 | 现象 | 原因 / 处理 |
 | --- | --- |
-| 日志写「未找到 config.json，使用内置默认」 | 还没复制模板：`Copy-Item config.example.json config.json` |
+| 日志写「未找到 config.json，使用内置默认」 | 还没复制模板：`Copy-Item src\config.example.json src\config.json` |
 | `game_dir` 填了但提示目录不存在 | 路径要写完整目录（含 `SCP Secret Laboratory`），不要指向 Steam 根目录；支持 `%USERPROFILE%` 之类的环境变量 |
-| 身份改完却发现机器码没变 | 确认改的是 `js."hwid_patch.js".identity`，且改的是 `config.json` 不是 `config.example.json` |
+| 身份改完却发现机器码没变 | 确认改的是 `js."hwid_patch.js".identity`，且改的是 `src\config.json` 不是 `config.example.json` |
 
 ## 网络
 

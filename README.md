@@ -27,10 +27,10 @@ py -m pip install frida
 所有可调项集中在一个文件里：
 
 ```powershell
-Copy-Item config.example.json config.json
+Copy-Item src\config.example.json src\config.json
 ```
 
-`config.json`（不进版本库，随便写本机路径）：
+`src\config.json`（不进版本库，随便写本机路径）：
 
 ```jsonc
 {
@@ -62,15 +62,15 @@ Copy-Item config.example.json config.json
 
 要点：
 
-- **只改 `config.json` 即可**，不用碰任何 `.js` / `.py`。
+- **只改 `src\config.json` 即可**，不用碰任何 `.js` / `.py`。
 - `game_dir` 留空时，顺序是「`SL_GAME_DIR` 环境变量 → Steam 注册表 → 各库目录」。
 - `identity` 三个串长度不必和真值一致，写入时按目标字符串长度截断或补齐。
-- `config.json` 已在 `.gitignore` 里；**不要把真实机器码提交进仓库**。
+- `src\config.json` 已在 `.gitignore` 里；**不要把真实机器码提交进仓库**。
 - 改完不需要重新安装，下次启动生效。
 
 ### 3. 启动
 
-双击 `scripts\start_scpsl.bat`，或给它建一个快捷方式。
+双击 `src\start_scpsl.bat`，或给它建一个快捷方式。
 
 启动成功的标志：`logs/patch_runtime.log` 里出现 `[PATCH]` 行。
 
@@ -83,11 +83,18 @@ Copy-Item config.example.json config.json
 
 ```
 YH-SLSpoofer/
-├── config.example.json   配置模板（复制成 config.json 后修改）
-├── docs/                 原理、排错、逆向实测记录
-├── scripts/              启动脚本与环境修复脚本
-├── src/                  改写器、侦察器、Python 编排
-└── logs/                 运行日志（自动创建，不进版本库）
+├── src/
+│   ├── config.example.json     配置模板（复制成 config.json 后修改）
+│   ├── config.json             本地配置（不进版本库）
+│   ├── hwid_patch.js           核心：SMBIOS 解析与改写
+│   ├── hwid_probe.js           侦察器
+│   ├── sl_common.py            公共工具：路径、配置、日志、会话装配
+│   ├── spawn_patch.py          正常启动入口
+│   ├── spawn_probe.py          侦察启动入口
+│   ├── start_scpsl.bat         双击入口
+│   └── repair-environment.ps1  环境修复（测试签名 / Defender）
+├── docs/                       原理、排错、逆向实测记录
+└── logs/                       运行日志（自动创建，不进版本库）
 ```
 
 ## 常见问题
@@ -96,7 +103,7 @@ YH-SLSpoofer/
 | --- | --- |
 | 双击没反应 | 看 `logs/patch_runtime.log`，通常是没有 `pip install frida` |
 | 日志只有 `[READY]` 没有 `[PATCH]` | 不是从本入口启动，或反作弊模块名变了 |
-| 弹框要求关闭测试签名 | 管理员运行 `scripts\repair-environment.ps1` 后重启 |
+| 弹框要求关闭测试签名 | 管理员运行 `src\repair-environment.ps1` 后重启 |
 
 完整列表见 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
 
@@ -116,7 +123,7 @@ YH-SLSpoofer/
 Remove-Item -Recurse -Force .
 ```
 
-只有跑过 `scripts\repair-environment.ps1` 才会动系统设置（关闭测试签名、内核调试、
+只有跑过 `src\repair-environment.ps1` 才会动系统设置（关闭测试签名、内核调试、
 清 Defender 排除项），需要时自行用 `bcdedit` 恢复。
 
 ## 文档

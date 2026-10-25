@@ -101,7 +101,7 @@ NORMALIZ   IdnToUnicode
 [NTREG] SystemStartOptions = TESTSIGNING NOEXECUTE=OPTIN ...
 ```
 
-修复脚本见 `scripts/repair-environment.ps1`，改完必须重启。
+修复脚本见 `src/repair-environment.ps1`，改完必须重启。
 
 ### 4.2 游戏目录文件白名单
 
